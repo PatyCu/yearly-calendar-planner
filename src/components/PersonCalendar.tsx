@@ -1,6 +1,6 @@
 "use client";
 
-import type { PersonConfig, DayEntry, DayType } from "@/lib/types";
+import type { PersonConfig, DayEntry } from "@/lib/types";
 import { computeStats, getRemoteDates } from "@/lib/data";
 import MonthGrid from "./MonthGrid";
 
@@ -12,40 +12,49 @@ interface Props {
   onUpdate: (days: Record<string, DayEntry>) => void;
 }
 
-const CYCLE_WITH_REMOTE: (DayType | null)[] = ["vacation-possible", "vacation-confirmed", "remote", null];
-const CYCLE_DEFAULT: (DayType | null)[] = ["vacation-possible", "vacation-confirmed", null];
-
 export default function PersonCalendar({ config, year, holidays, days, onUpdate }: Props) {
   const holidaySet = new Set(holidays);
   const remoteDates = getRemoteDates(config);
   const stats = computeStats(config, days);
 
-  const cycle = config.remote.kind === "days" ? CYCLE_WITH_REMOTE : CYCLE_DEFAULT;
-
-  function handleDayClick(date: string, shiftKey: boolean) {
+  function handleDayClick(date: string, { shiftKey, ctrlKey, metaKey }: { shiftKey: boolean; ctrlKey: boolean; metaKey: boolean }) {
     const entry = days[date];
-
-    if (shiftKey && entry && entry.type !== "remote") {
-      const next = { ...days };
-      if (entry.half) {
-        const { half, ...rest } = entry;
-        next[date] = rest as DayEntry;
-      } else {
-        next[date] = { ...entry, half: true };
-      }
-      onUpdate(next);
-      return;
-    }
-
-    const currentType = entry?.type ?? null;
-    const currentIdx = cycle.indexOf(currentType);
-    const nextType = cycle[(currentIdx + 1) % cycle.length];
     const next = { ...days };
-    if (nextType === null) {
-      delete next[date];
+
+    if (shiftKey) {
+      // ½ day: cycle vacation-possible(half) → vacation-confirmed(half) → empty
+      if (entry?.half && entry.type === "vacation-possible") {
+        next[date] = { type: "vacation-confirmed", half: true };
+      } else if (entry?.half && entry.type === "vacation-confirmed") {
+        delete next[date];
+      } else {
+        next[date] = { type: "vacation-possible", half: true };
+      }
+    } else if (ctrlKey) {
+      // 1 day confirmed PTO — toggle off if already set
+      if (entry?.type === "vacation-confirmed" && !entry.half) {
+        delete next[date];
+      } else {
+        next[date] = { type: "vacation-confirmed" };
+      }
+    } else if (metaKey) {
+      // Remote — toggle off if already set
+      if (entry?.type === "remote") {
+        delete next[date];
+      } else {
+        next[date] = { type: "remote" };
+      }
     } else {
-      next[date] = { type: nextType };
+      // Regular click: cycle vacation-possible → vacation-confirmed → empty
+      if (!entry || (entry.type !== "vacation-possible" && entry.type !== "vacation-confirmed")) {
+        next[date] = { type: "vacation-possible" };
+      } else if (entry.type === "vacation-possible") {
+        next[date] = { type: "vacation-confirmed" };
+      } else {
+        delete next[date];
+      }
     }
+
     onUpdate(next);
   }
 

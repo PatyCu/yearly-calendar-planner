@@ -10,6 +10,7 @@ import {
   saveToStorage,
 } from "@/lib/data";
 import PersonCalendar from "@/components/PersonCalendar";
+import ShortcutsLegend from "@/components/ShortcutsLegend";
 
 const YEAR = 2026;
 
@@ -47,8 +48,8 @@ export default function Home() {
   }
 
   return (
-    <div className="p-6 min-h-screen bg-white">
-      <h1 className="text-center text-2xl font-bold mb-6">{YEAR}</h1>
+    <div className="p-6 min-h-screen bg-white flex flex-col gap-8">
+      <h1 className="text-center text-2xl font-bold">{YEAR}</h1>
       <div className="flex gap-10 overflow-x-auto">
         {config.people.map((person) => (
           <PersonCalendar
@@ -61,6 +62,7 @@ export default function Home() {
           />
         ))}
       </div>
+      <ShortcutsLegend />
     </div>
   );
 }
