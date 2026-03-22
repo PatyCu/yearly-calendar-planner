@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Yearly Calendar Planner
 
-## Getting Started
+A personal vacation planning webapp for two people, replacing a Google Sheet. Shows a full-year calendar grid per person with Barcelona public holidays, PTO tracking, and remote work days.
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) · **React 19** · **TypeScript**
+- **Tailwind CSS v4**
+- **pnpm**
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+src/
+  app/            # Next.js pages and layout
+  components/
+    MonthGrid.tsx       # Single month grid with day interaction
+    PersonCalendar.tsx  # 12-month view + stats for one person
+  lib/
+    types.ts      # All shared TypeScript types
+    data.ts       # Fetch helpers, stat computation, localStorage utils
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+public/data/
+  holidays-YYYY.json          # Barcelona public holidays for the year
+  config-YYYY.json            # Per-person quotas and remote config
+  calendar-YYYY-{person}.json # Day entries (written by the user, persisted to localStorage)
+```
 
-## Learn More
+## Data model
 
-To learn more about Next.js, take a look at the following resources:
+**`holidays-YYYY.json`** — array of ISO date strings.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**`config-YYYY.json`**
+```json
+{
+  "year": 2026,
+  "people": [
+    { "id": "paty", "name": "Paty", "ptoQuota": 28.5, "remote": { "kind": "days", "quota": 9 } },
+    { "id": "oriol", "name": "Oriol", "ptoQuota": 23, "remote": { "kind": "weeks", "weekStarts": ["2026-01-05"] } }
+  ]
+}
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**`calendar-YYYY-{person}.json`**
+```json
+{
+  "year": 2026,
+  "personId": "paty",
+  "days": {
+    "2026-07-14": { "type": "vacation-confirmed" },
+    "2026-07-15": { "type": "vacation-confirmed", "half": true }
+  }
+}
+```
 
-## Deploy on Vercel
+`type` is one of `vacation-possible` · `vacation-confirmed` · `remote`.
+`half: true` counts the day as 0.5 PTO instead of 1.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Interactions
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Action | Effect |
+|---|---|
+| Click a weekday | Cycles: empty → possible (orange) → confirmed (red) → remote (cyan, if applicable) → empty |
+| Shift+click a vacation day | Toggles half-day (fades the cell, counts 0.5) |
+| Click a holiday or weekend | No-op |
+
+State is persisted to `localStorage` on every change and loaded on startup (falls back to the JSON file).
+
+## Adding a new year
+
+1. Add `public/data/holidays-YYYY.json` with that year's BCN public holidays.
+2. Add `public/data/config-YYYY.json` with updated quotas and Oriol's remote weeks.
+3. Add empty `public/data/calendar-YYYY-paty.json` and `calendar-YYYY-oriol.json`.
+4. Update `const YEAR = YYYY` in `src/app/page.tsx`.
