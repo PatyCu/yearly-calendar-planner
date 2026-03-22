@@ -8,6 +8,12 @@ const MONTH_NAMES = [
 ];
 const DAY_HEADERS = ["M", "TU", "W", "TH", "F", "S", "S"];
 
+interface ClickModifiers {
+  shiftKey: boolean;
+  ctrlKey: boolean;
+  metaKey: boolean;
+}
+
 interface Props {
   month: number; // 0-11
   year: number;
@@ -15,7 +21,7 @@ interface Props {
   holidays: Set<string>;
   remoteDates: Set<string>;
   personId: string;
-  onDayClick: (date: string, shiftKey: boolean) => void;
+  onDayClick: (date: string, modifiers: ClickModifiers) => void;
   readonly?: boolean;
 }
 
@@ -75,7 +81,7 @@ export default function MonthGrid({ month, year, days, holidays, remoteDates, pe
           return (
             <div
               key={i}
-              onClick={interactive ? (e) => onDayClick(iso, e.shiftKey) : undefined}
+              onClick={interactive ? (e) => onDayClick(iso, { shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey }) : undefined}
               className={[
                 "text-center py-0.5 leading-4 select-none",
                 cellClasses(entry, isHoliday, isRemote, isWeekend),
