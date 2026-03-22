@@ -1,0 +1,17 @@
+{
+  "year": 2026,
+  "people": [
+    {
+      "id": "paty",
+      "name": "Paty",
+      "ptoQuota": 28.5,
+      "remote": { "kind": "days", "quota": 9 }
+    },
+    {
+      "id": "oriol",
+      "name": "Oriol",
+      "ptoQuota": 23,
+      "remote": { "kind": "weeks", "weekStarts": [] }
+    }
+  ]
+}
